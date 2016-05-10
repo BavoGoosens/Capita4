@@ -49,6 +49,23 @@ def get_data_prevdays(dat, day, delta):
             rows.append( row )
     return rows
 
+def is_int(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+def is_float(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+def is_nan(s):
+    return s == 'NaN'
+
 if __name__ == '__main__':
     datafile = '../data/prices2013.dat';
     dat = load_prices(datafile)
