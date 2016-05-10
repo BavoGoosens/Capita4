@@ -64,11 +64,38 @@ class Data(object):
                 result[key] += value
         return result
 
+    def get_labels_for_prev_days(self, start, delta):
+        result = list()
+        data_days = pd.get_data_prevdays(self.data, start, delta)
+        for data_row in data_days:
+            for key, value in data_row.iteritems():
+                if key == self.predict_column:
+                    value = self.convert_type(value)
+                    result.append(value)
+        return result
+
+    def get_labels_for_day(self, day):
+        result = list()
+        data_day = pd.get_data_day(self.data, day)  # returns all rows for one day
+        for data_row in data_day:
+            for key, value in data_row.iteritems():
+                if key == self.predict_column:
+                    value = self.convert_type(value)
+                    result.append(value)
+        return result
+
+    def get_labels_for_all_days(self):
+        result = list()
+        days = pd.get_all_days(self.data)
+        for day in days:
+            labels_for_day = self.get_labels_for_day(day)
+            result += labels_for_day
+        return result
+
     def handle_missing_values(self, flattened_features):
         imputer = Imputer(missing_values=float('nan'), strategy='most_frequent')
         flattened_features = imputer.fit_transform(flattened_features)
         return flattened_features
-
 
     # Return the given string in the right type
     def convert_type(self, value):
