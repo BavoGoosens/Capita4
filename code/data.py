@@ -65,7 +65,7 @@ class Data(object):
         return result
 
     def handle_missing_values(self, flattened_features):
-        imputer = Imputer(missing_values=float('nan'), strategy='mean')
+        imputer = Imputer(missing_values=float('nan'), strategy='most_frequent')
         flattened_features = imputer.fit_transform(flattened_features)
         return flattened_features
 
