@@ -1,5 +1,6 @@
 import prices_data as pd
 from collections import defaultdict
+from sklearn.preprocessing import Imputer
 
 class Data(object):
 
@@ -62,6 +63,12 @@ class Data(object):
                     result[key] = list()
                 result[key] += value
         return result
+
+    def handle_missing_values(self, flattened_features):
+        imputer = Imputer(missing_values=float('nan'), strategy='mean')
+        flattened_features = imputer.fit_transform(flattened_features)
+        return flattened_features
+
 
     # Return the given string in the right type
     def convert_type(self, value):

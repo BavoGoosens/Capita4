@@ -15,8 +15,10 @@ features = data.get_features_for_prev_days(dt.datetime.strptime("2012-12-1", '%Y
 # DIT KAN GEBRUIKT WORDEN OM TE TRAINEN
 flattened_features = data.flatten_features(features)
 
+flattened_features_without_nan = data.handle_missing_values(flattened_features)
+
 feature_data = features["SMPEA"]
-feature_data2 = features["PeriodOfDay"]
+feature_data2 = features["ORKTemperature"]
 plt.plot(feature_data)
 plt.plot(feature_data2)
 plt.show()
