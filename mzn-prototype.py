@@ -25,6 +25,7 @@ from prices_regress import *
 import numpy as np
 from sklearn import linear_model
 
+
 # from http://code.activestate.com/recipes/577932-flatten-arraytuple/
 def _qflatten(L,a,I):
     for x in L:
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     # if you want to hardcode the MiniZincIDE path for the binaries, here is a resonable place to do that
-    #args.mzn_dir = "/home/tias/local/src/MiniZincIDE-2.0.13-bundle-linux-x86_64"
+    args.mzn_dir = "/Applications/MiniZincIDE.app/Contents/Resources"
 
     tmpdir = ""
     if args.tmp:
@@ -92,7 +93,7 @@ if __name__ == '__main__':
     X_train = [ [eval(v) for (k,v) in row.iteritems() if k in column_features] for row in rows_prev]
     y_train = [ eval(row[column_predict]) for row in rows_prev ]
 
-    clf = linear_model.LinearRegression()
+    clf = linear_model.TheilSenRegressor()
     clf.fit(X_train, y_train)
 
     preds = [] # per day an array containing a prediction for each PeriodOfDay
