@@ -37,6 +37,18 @@ class Data(object):
                     result[key].append(value)
         return result
 
+    def get_target_for_day(self, day):
+        result = defaultdict()
+        data_day = pd.get_data_day(self.data, day)  # returns all rows for one day
+        for data_row in data_day:
+            for key, value in data_row.iteritems():
+                if key in self.predict_column:
+                    if key not in result:
+                        result[key] = list()
+                    value = self.convert_type(value)
+                    result[key].append(value)
+        return result
+
     # Returns dictionary with feature names (keys) and list of values for all instances
     # This dictionary can be used for filling in NaN's and for plotting features
     def get_features_for_prev_days(self, start, delta):

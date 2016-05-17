@@ -93,6 +93,52 @@ if os.path.isdir("../load2"):
     globpatt = os.path.join("../load2", 'day*.txt')
     f_instances = sorted(glob.glob(globpatt))
 
+# zelfde als hier boven maar de preds en actual targets zijn per day gesplitst.
+preds = [] # per day an array containing a prediction for each PeriodOfDay
+actuals = [] # also per day
+for (i,f) in enumerate(f_instances):
+    today = act_day + dt.timedelta(i)
+    rows_tod = data.get_features_for_day(today)
+    flattened_rows_today = data.flatten_features(rows_tod)
+    X_test = data.handle_missing_values(flattened_rows_today)
+    target_today = data.get_target_for_day(today)
+    flattened_target_today = data.flatten_features(target_today)
+    y_test = data.handle_missing_values(flattened_target_today)
+    preds.append(regressor.predict(X_test))
+    actuals.append(y_test)
+    print "wow"
+
+fig, ((ax1, ax2, ax3, ax4, ax5, ax6, ax7), (ax8, ax9, ax10, ax11, ax12, ax13, ax14)) = plt.subplots(nrows=2, ncols=7)
+ax1.plot(preds[0], label="predicted")
+ax1.plot(actuals[0], label="actuals")
+ax2.plot(preds[1], label="predicted")
+ax2.plot(actuals[1], label="actuals")
+ax3.plot(preds[2], label="predicted")
+ax3.plot(actuals[2], label="actuals")
+ax4.plot(preds[3], label="predicted")
+ax4.plot(actuals[3], label="actuals")
+ax5.plot(preds[4], label="predicted")
+ax5.plot(actuals[4], label="actuals")
+ax6.plot(preds[5], label="predicted")
+ax6.plot(actuals[5], label="actuals")
+ax7.plot(preds[6], label="predicted")
+ax7.plot(actuals[6], label="actuals")
+ax8.plot(preds[7], label="predicted")
+ax8.plot(actuals[7], label="actuals")
+ax9.plot(preds[8], label="predicted")
+ax9.plot(actuals[8], label="actuals")
+ax10.plot(preds[9], label="predicted")
+ax10.plot(actuals[9], label="actuals")
+ax11.plot(preds[10], label="predicted")
+ax11.plot(actuals[10], label="actuals")
+ax12.plot(preds[11], label="predicted")
+ax12.plot(actuals[11], label="actuals")
+ax13.plot(preds[12], label="predicted")
+ax13.plot(actuals[12], label="actuals")
+ax14.plot(preds[13], label="predicted")
+ax14.plot(actuals[13], label="actuals")
+plt.show()
+
 print "test "
 
 
