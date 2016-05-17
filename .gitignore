@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+code/pcp/results/
+code/pcp/test_data/
+
 /scripts/*.pyc
 *.pyc 
 
