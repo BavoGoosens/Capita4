@@ -3,6 +3,7 @@ import glob
 import datetime as dt
 from data import Data
 import random
+import numpy as np
 from sklearn import linear_model
 from matplotlib import pyplot as plt
 from sklearn.tree import DecisionTreeRegressor
@@ -55,8 +56,8 @@ print "End of next week = " + str(end_day)
 
 # regressor = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
 # regressor = DecisionTreeRegressor(max_depth=2)
-# regressor = linear_model.TheilSenRegressor()
-regressor = linear_model.Ridge()
+regressor = linear_model.TheilSenRegressor()
+# regressor = linear_model.Ridge()
 # regressor = linear_model.LinearRegression()
 regressor.fit(historic_data_set, target_data_set)
 
@@ -69,7 +70,7 @@ fits_same = [regressor.predict(historic_data_set)]
 fits_same = fits_same[0]
 
 plt.figure(1)
-plt.subplot(211)
+plt.subplot(311)
 plt.plot(fits_same, label="fits_same")
 plt.plot(target_data_set, label="trgt_fnc")
 plt.grid(True)
@@ -81,12 +82,25 @@ plt.legend()
 fits_next_week = [regressor.predict(future_data_set)]
 fits_next_week = fits_next_week[0]
 
-plt.subplot(212)
+plt.subplot(312)
 plt.plot(fits_next_week, label="fits_nxt_wk")
 plt.plot(future_target_data_set, label="trgt_nxt_wk")
 plt.grid(True)
 plt.legend()
+
+errs = [(a_i - b_i)**2 for a_i, b_i in zip(fits_next_week, future_target_data_set)]
+# The mean square error
+print("Residual sum of squares: %.2f"
+      % np.mean(errs))
+# Explained variance score: 1 is perfect prediction
+print('Variance score: %.2f' % regressor.score(future_data_set, future_target_data_set))
+
+plt.subplot(313)
+plt.plot(errs, label="Errors")
+plt.grid(True)
+plt.legend()
 plt.show()
+
 
 f_instances = "../load2"
 if os.path.isdir("../load2"):
@@ -106,7 +120,6 @@ for (i,f) in enumerate(f_instances):
     y_test = data.handle_missing_values(flattened_target_today)
     preds.append(regressor.predict(X_test))
     actuals.append(y_test)
-    print "wow"
 
 fig, ((ax1, ax2, ax3, ax4, ax5, ax6, ax7), (ax8, ax9, ax10, ax11, ax12, ax13, ax14)) = plt.subplots(nrows=2, ncols=7)
 ax1.plot(preds[0], label="predicted")
@@ -138,8 +151,6 @@ ax13.plot(actuals[12], label="actuals")
 ax14.plot(preds[13], label="predicted")
 ax14.plot(actuals[13], label="actuals")
 plt.show()
-
-print "test "
 
 
 # Feed the predicted data to the scheduler and calculate the cost
