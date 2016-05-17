@@ -8,6 +8,11 @@ from sklearn import linear_model
 from matplotlib import pyplot as plt
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import AdaBoostRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.neighbors import RadiusNeighborsRegressor
+from sklearn.neighbors import KNeighborsRegressor
+
+
 
 # import data set and handle missing values
 data_file = "../data/prices2013.dat"
@@ -56,9 +61,16 @@ print "End of next week = " + str(end_day)
 
 # regressor = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
 # regressor = DecisionTreeRegressor(max_depth=2)
-regressor = linear_model.TheilSenRegressor()
+# regressor = RandomForestRegressor()
+# regressor = linear_model.TheilSenRegressor()
 # regressor = linear_model.Ridge()
 # regressor = linear_model.LinearRegression()
+# regressor = linear_model.PassiveAggressiveRegressor()
+# regressor = linear_model.SGDRegressor()
+# regressor = linear_model.Lasso()
+# regressor = linear_model.RANSACRegressor()
+# regressor = RadiusNeighborsRegressor(radius=1.0)
+regressor = KNeighborsRegressor(n_neighbors=3)
 regressor.fit(historic_data_set, target_data_set)
 
 print "Using following model: " + str(regressor)
