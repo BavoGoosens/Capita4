@@ -8,9 +8,15 @@ from sklearn import linear_model
 from matplotlib import pyplot as plt
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import AdaBoostRegressor
+from sklearn.ensemble import BaggingRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neighbors import RadiusNeighborsRegressor
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.svm import NuSVR
+from sklearn.svm import LinearSVR
+from sklearn.svm import SVR
+
+from pcp import pcp
 
 
 
@@ -57,46 +63,107 @@ print "End of next week = " + str(end_day)
 
 # Experiment
 
+# RPCA Tests
+L, S, (u, s, v) = pcp(target_data_set, maxiter=30, verbose=True, svd_method="exact")
+LD, SD, (uD, sD, vD) = pcp(historic_data_set, maxiter=30, verbose=True, svd_method="exact")
+
+
+# plt.figure(3)
+# plt.plot(target_data_set, label="target")
+# plt.plot(L, label="low_rank")
+# plt.plot(S, label="sparse")
+# # plt.plot(L + S, label="reconstructed")
+# plt.grid(True)
+# plt.legend()
+# # plt.show()
+
+
 # train on historic data.
 
-# regressor = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
-# regressor = DecisionTreeRegressor(max_depth=2)
-# regressor = RandomForestRegressor()
-# regressor = linear_model.TheilSenRegressor()
-# regressor = linear_model.Ridge()
-# regressor = linear_model.LinearRegression()
-# regressor = linear_model.PassiveAggressiveRegressor()
-# regressor = linear_model.SGDRegressor()
-# regressor = linear_model.Lasso()
-# regressor = linear_model.RANSACRegressor()
-# regressor = RadiusNeighborsRegressor(radius=1.0)
-regressor = KNeighborsRegressor(n_neighbors=3)
-regressor.fit(historic_data_set, target_data_set)
+avg = np.median(L)
+# regressorB = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
+regressorB = LinearSVR()
+# regressorB = DecisionTreeRegressor(max_depth=4)
+# regressorB = RandomForestRegressor()
+# regressorB = linear_model.TheilSenRegressor()
+# regressorB = linear_model.Ridge()
+# regressorB = linear_model.LinearRegression()
+# regressorB = linear_model.PassiveAggressiveRegressor()
+# regressorB = linear_model.SGDRegressor()
+# regressorB = linear_model.Lasso()
+# regressorB = linear_model.RANSACRegressor()
+# regressorB = RadiusNeighborsRegressor(radius=1.0)
+# regressorB = KNeighborsRegressor(n_neighbors=3)
+regressorB.fit(historic_data_set, L)
 
-print "Using following model: " + str(regressor)
+# regressorA = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
+# regressorA = DecisionTreeRegressor(max_depth=2)
+# regressorA = RandomForestRegressor()
+regressorA = BaggingRegressor()
+# regressorA = SVR()
+# regressorA = LinearSVR()
+# regressorA = NuSVR()
+# regressorA = linear_model.TheilSenRegressor()
+# regressorA = linear_model.Ridge()
+# regressorA = linear_model.BayesianRidge()
+# regressorA = linear_model.LinearRegression()
+# regressorA = linear_model.PassiveAggressiveRegressor()
+# regressorA = linear_model.SGDRegressor()
+# regressorA = linear_model.Lasso()
+# regressorA = linear_model.RANSACRegressor()
+# regressorA = RadiusNeighborsRegressor(radius=1.0)
+# regressorA = KNeighborsRegressor(n_neighbors=4)
+regressorA.fit(historic_data_set, S)
+
+baseRegressor = linear_model.LinearRegression()
+baseRegressor.fit(historic_data_set, target_data_set)
+
+print "Using following model: " + str(regressorA) + str(regressorB)
 
 # plot the trained models against the data they were trained on
 # together with least squares measures(in order to experiment with diff linear models)
 
-fits_same = [regressor.predict(historic_data_set)]
-fits_same = fits_same[0]
+fits_base = [regressorB.predict(historic_data_set)]
+fits_base = fits_base[0]
+
+fits_anomaly = [regressorA.predict(historic_data_set)]
+fits_anomaly = fits_anomaly[0]
+
+fits_same = [a_i + b_i for a_i, b_i in zip(fits_base, fits_anomaly)]
+
+fits_dummy = [baseRegressor.predict(historic_data_set)]
+fits_dummy = fits_dummy[0]
 
 plt.figure(1)
 plt.subplot(311)
 plt.plot(fits_same, label="fits_same")
+plt.plot(fits_base, label="base_fit")
+plt.plot(fits_anomaly, label="anomaly_fit")
 plt.plot(target_data_set, label="trgt_fnc")
+plt.plot(fits_dummy, label="fits_dummy")
 plt.grid(True)
 plt.legend()
 
 # plot the predicted values (by the model) against the actual prices for that week
 # it is this prediction that we'll feed to the scheduler
 
-fits_next_week = [regressor.predict(future_data_set)]
-fits_next_week = fits_next_week[0]
+fits_next_week_base = [regressorB.predict(future_data_set)]
+fits_next_week_base = fits_next_week_base[0]
+
+fits_next_week_anomaly = [regressorA.predict(future_data_set)]
+fits_next_week_anomaly = fits_next_week_anomaly[0]
+
+fits_next_week_dummy = [baseRegressor.predict(future_data_set)]
+fits_next_week_dummy = fits_next_week_dummy[0]
+
+fits_next_week = [a + b for a, b in zip(fits_next_week_base, fits_next_week_anomaly)]
 
 plt.subplot(312)
 plt.plot(fits_next_week, label="fits_nxt_wk")
+plt.plot(fits_next_week_base, label="fits_nxt_wk_base")
+plt.plot(fits_next_week_anomaly, label="fits_next_wk_anomaly")
 plt.plot(future_target_data_set, label="trgt_nxt_wk")
+plt.plot(fits_next_week_dummy, label="fits_nxt_wk_dummy")
 plt.grid(True)
 plt.legend()
 
@@ -105,7 +172,7 @@ errs = [(a_i - b_i)**2 for a_i, b_i in zip(fits_next_week, future_target_data_se
 print("Residual sum of squares: %.2f"
       % np.mean(errs))
 # Explained variance score: 1 is perfect prediction
-print('Variance score: %.2f' % regressor.score(future_data_set, future_target_data_set))
+print('Variance score: %.2f' % regressorB.score(future_data_set, future_target_data_set))
 
 plt.subplot(313)
 plt.plot(errs, label="Errors")
@@ -130,7 +197,7 @@ for (i,f) in enumerate(f_instances):
     target_today = data.get_target_for_day(today)
     flattened_target_today = data.flatten_features(target_today)
     y_test = data.handle_missing_values(flattened_target_today)
-    preds.append(regressor.predict(X_test))
+    preds.append(regressorB.predict(X_test))
     actuals.append(y_test)
 
 fig, ((ax1, ax2, ax3, ax4, ax5, ax6, ax7), (ax8, ax9, ax10, ax11, ax12, ax13, ax14)) = plt.subplots(nrows=2, ncols=7)
@@ -162,7 +229,7 @@ ax13.plot(preds[12], label="predicted")
 ax13.plot(actuals[12], label="actuals")
 ax14.plot(preds[13], label="predicted")
 ax14.plot(actuals[13], label="actuals")
-plt.show()
+# plt.show()
 
 
 # Feed the predicted data to the scheduler and calculate the cost
