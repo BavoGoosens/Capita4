@@ -35,20 +35,10 @@ def get_random_day():
     rand = random.randint(historic_days, len(days))  # always have 'historic_days' previous days
     return days[rand]
 
-def get_features_with_missing_values(features):
-    features_missing_values = list()
-    for feature_name, feature_list in features.items():
-        for feature in feature_list:
-            if isnan(feature):
-                features_missing_values.append(feature_name)
-                break
-    return features_missing_values
-
 act_day = get_random_day()
 day = str(act_day)
 # keep these stored to plot them later against the trained model
 features = data.get_features_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(), dt.timedelta(historic_days))
-print "Features with missing values: "+str(get_features_with_missing_values(features))
 flattened_features = data.flatten_features(features)
 historic_data_set = data.handle_missing_values(flattened_features)
 

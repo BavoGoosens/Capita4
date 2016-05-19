@@ -1,6 +1,7 @@
 import prices_data as pd
 from collections import defaultdict
 from sklearn.preprocessing import Imputer
+from math import isnan
 
 
 class Data(object):
@@ -110,13 +111,22 @@ class Data(object):
             days.add(row['datetime'].date())
         return sorted(days)
 
-    def handle_missing_values_basic(self, flattened_features):
+    def handle_missing_values(self, flattened_features):
         imputer = Imputer(missing_values=float('nan'), strategy='most_frequent')
         flattened_features = imputer.fit_transform(flattened_features)
         return flattened_features
 
-    def handle_missing_values(self, features):
-        pass
+    def handle_missing_values_advanced(self, features):
+        features_with_missing_values = self.get_features_with_missing_values()
+
+    def get_features_with_missing_values(self, features):
+        features_missing_values = list()
+        for feature_name, feature_list in features.items():
+            for feature in feature_list:
+                if isnan(feature):
+                    features_missing_values.append(feature_name)
+                    break
+        return features_missing_values
 
     # Return the given string in the right type
     def convert_type(self, value):
