@@ -110,10 +110,13 @@ class Data(object):
             days.add(row['datetime'].date())
         return sorted(days)
 
-    def handle_missing_values(self, flattened_features):
+    def handle_missing_values_basic(self, flattened_features):
         imputer = Imputer(missing_values=float('nan'), strategy='most_frequent')
         flattened_features = imputer.fit_transform(flattened_features)
         return flattened_features
+
+    def handle_missing_values(self, features):
+        pass
 
     # Return the given string in the right type
     def convert_type(self, value):

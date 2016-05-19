@@ -16,7 +16,7 @@ from sklearn.svm import NuSVR
 from sklearn.svm import LinearSVR
 from sklearn.svm import SVR
 from sklearn.kernel_ridge import KernelRidge
-
+from math import isnan
 from pcp import pcp
 
 
@@ -35,11 +35,20 @@ def get_random_day():
     rand = random.randint(historic_days, len(days))  # always have 'historic_days' previous days
     return days[rand]
 
+def get_features_with_missing_values(features):
+    features_missing_values = list()
+    for feature_name, feature_list in features.items():
+        for feature in feature_list:
+            if isnan(feature):
+                features_missing_values.append(feature_name)
+                break
+    return features_missing_values
 
 act_day = get_random_day()
 day = str(act_day)
 # keep these stored to plot them later against the trained model
 features = data.get_features_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(), dt.timedelta(historic_days))
+print "Features with missing values: "+str(get_features_with_missing_values(features))
 flattened_features = data.flatten_features(features)
 historic_data_set = data.handle_missing_values(flattened_features)
 
@@ -71,14 +80,14 @@ S = np.ravel(S)
 LD, SD, (uD, sD, vD) = pcp(historic_data_set, maxiter=30, verbose=False, svd_method="exact")
 
 
-# plt.figure(3)
-# plt.plot(target_data_set, label="target")
-# plt.plot(L, label="low_rank")
-# plt.plot(S, label="sparse")
-# # plt.plot(L + S, label="reconstructed")
-# plt.grid(True)
-# plt.legend()
-# plt.show()
+#plt.figure(3)
+#plt.plot(target_data_set, label="target")
+#plt.plot(L, label="low_rank")
+#plt.plot(S, label="sparse")
+#plt.plot(L + S, label="reconstructed")
+#plt.grid(True)
+#plt.legend()
+#plt.show()
 
 
 # train on historic data.
@@ -104,8 +113,8 @@ regressorB.fit(historic_data_set, L)
 # regressorA = DecisionTreeRegressor(max_depth=2)
 # regressorA = RandomForestRegressor()
 # regressorA = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
-regressorA = SVR(kernel='rbf', C=50, gamma=10)
-# regressorA = LinearSVR()
+# regressorA = SVR(kernel='rbf', C=50, gamma=10)
+regressorA = LinearSVR()
 # regressorA = NuSVR(kernel='rbf', C=1e3, gamma=0.1)
 # regressorA = KernelRidge(alpha=1.0, coef0=1, degree=3, gamma=None, kernel='poly', kernel_params=None)
 # regressorA = linear_model.TheilSenRegressor()
