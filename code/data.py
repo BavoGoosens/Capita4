@@ -111,10 +111,10 @@ class Data(object):
         return result
 
     def get_all_days(self):
-        days = set()
-        for row in self.data:
-            days.add(row['datetime'].date())
-        return sorted(days)
+        return pd.get_all_days(self.data)
+
+    def get_random_day(self):
+        return pd.get_random_day(self.data)
 
     def handle_missing_values(self, flattened_features):
         imputer = Imputer(missing_values=float('nan'), strategy='most_frequent')

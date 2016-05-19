@@ -29,14 +29,7 @@ data = Data(data_file)
 # take 30 historic days before the data
 historic_days = 200
 
-
-# choose a random date.
-def get_random_day():
-    days = data.get_all_days()
-    rand = random.randint(historic_days, len(days))  # always have 'historic_days' previous days
-    return days[rand]
-
-act_day = get_random_day()
+act_day = data.get_random_day()
 day = str(act_day)
 # keep these stored to plot them later against the trained model
 features = data.get_features_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(), dt.timedelta(historic_days))
