@@ -90,10 +90,10 @@ print "End of next week = " + str(end_day)
 # Experiment
 
 # RPCA Tests
-L, S, (u, s, v) = pcp(target_data_set, maxiter=30, verbose=False, svd_method="approximate")
+L, S, (u, s, v) = pcp(np.array(target_data_set), maxiter=30, verbose=False, svd_method="approximate")
 L = np.ravel(L)
 S = np.ravel(S)
-LD, SD, (uD, sD, vD) = pcp(historic_data_set, maxiter=30, verbose=False, svd_method="exact")
+LD, SD, (uD, sD, vD) = pcp(np.array(historic_data_set), maxiter=30, verbose=False, svd_method="exact")
 
 
 #plt.figure(3)
@@ -111,8 +111,8 @@ LD, SD, (uD, sD, vD) = pcp(historic_data_set, maxiter=30, verbose=False, svd_met
 avg = np.median(L)
 # regressorB = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
 # regressorB = LinearSVR()
-# regressorB = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
-regressorB = DecisionTreeRegressor(max_depth=4)
+regressorB = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
+# regressorB = DecisionTreeRegressor(max_depth=4)
 # regressorB = RandomForestRegressor()
 # regressorB = linear_model.TheilSenRegressor()
 # regressorB = linear_model.Ridge()
@@ -125,10 +125,10 @@ regressorB = DecisionTreeRegressor(max_depth=4)
 # regressorB = KNeighborsRegressor(n_neighbors=3)
 regressorB.fit(historic_data_set, L)
 
-# regressorA = AdaBoostRegressor(linear_model.Lasso(), n_estimators=300)
+regressorA = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
 # regressorA = DecisionTreeRegressor(max_depth=2)
 # regressorA = RandomForestRegressor()
-regressorA = BaggingRegressor(linear_model.Lasso())
+# regressorA = BaggingRegressor(linear_model.Lasso())
 # regressorA = SVR(kernel='rbf', C=50, gamma=10)
 # regressorA = LinearSVR()
 # regressorA = NuSVR(kernel='rbf', C=1e3, gamma=0.1)
