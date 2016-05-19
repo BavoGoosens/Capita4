@@ -26,3 +26,6 @@ class Regressor(object):
         predict_total = [x_i+y_i for x_i, y_i in zip(predict_base, predict_anomaly)]
         predict_dummy = self.baseRegressor.predict(X)
         return predict_base, predict_anomaly, predict_total, predict_dummy
+
+    def get_errors(self, prediction, actual):
+        return [(a_i-b_i)**2 for a_i, b_i in zip(prediction, actual)]

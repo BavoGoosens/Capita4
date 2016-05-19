@@ -2,7 +2,6 @@ import os
 import glob
 import datetime as dt
 from data import Data
-import random
 import numpy as np
 from sklearn import linear_model
 from matplotlib import pyplot as plt
@@ -20,7 +19,6 @@ from sklearn.kernel_ridge import KernelRidge
 from math import isnan
 from pcp import pcp
 from collections import defaultdict
-import scipy.fftpack as ff
 runcheck = __import__('mzn-runcheck')
 import tempfile
 import checker_mzn as chkmzn
@@ -36,9 +34,11 @@ data = Data(data_file)
 # take historic days before the data
 historic_days = 50
 
+# initialize start day
 act_day = data.get_random_day()
-act_day = dt.date(2013, 2, 1)
+act_day = dt.date(2013, 2, 1) # comment if day needs to be chosen randomly
 day = str(act_day)
+
 # keep these stored to plot them later against the trained model
 features = data.get_features_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(), dt.timedelta(historic_days))
 historic_data_set = data.flatten_features(features) # for training
@@ -46,8 +46,6 @@ historic_data_set = data.flatten_features(features) # for training
 target_features = data.get_target_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(),
                                                 dt.timedelta(historic_days))
 target_data_set = data.flatten_features(target_features) # for training
-
-
 
 # get next week to get the actual data later to compare the predictions against
 # add one extra day since I am not sure if the data form the 30th day was included in the historic set.
@@ -63,14 +61,8 @@ print "Start day = " + day
 print "End day = " + str(end_day)
 
 # Experiment
-
 # RPCA Tests
-L, S, (u, s, v) = pcp(np.array(target_data_set), maxiter=30, verbose=False, svd_method="approximate")
-L = np.ravel(L)
-S = np.ravel(S)
-LD, SD, (uD, sD, vD) = pcp(np.array(historic_data_set), maxiter=30, verbose=False, svd_method="exact")
-
-
+# LD, SD, (uD, sD, vD) = pcp(np.array(historic_data_set), maxiter=30, verbose=False, svd_method="exact")
 #plt.figure(3)
 #plt.plot(target_data_set, label="target")
 #plt.plot(L, label="low_rank")
@@ -79,7 +71,6 @@ LD, SD, (uD, sD, vD) = pcp(np.array(historic_data_set), maxiter=30, verbose=Fals
 #plt.grid(True)
 #plt.legend()
 #plt.show()
-
 
 # train on historic data.
 # regressorB = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
@@ -122,8 +113,6 @@ baseRegressor = linear_model.LinearRegression()
 regressor = Regressor(regressorA, regressorB, baseRegressor)
 regressor.fit(historic_data_set, target_data_set)
 
-# print "Using following model: " + str(regressorA) + str(regressorB)
-
 # plot the trained models against the data they were trained on
 # together with least squares measures(in order to experiment with diff linear models)
 
@@ -142,9 +131,6 @@ plt.legend()
 # plot the predicted values (by the model) against the actual prices for that week
 # it is this prediction that we'll feed to the scheduler
 
-
-
-
 #exp
 # print len(future_data_set)
 # set = historic_data_set[:-len(future_data_set)]
@@ -152,22 +138,19 @@ plt.legend()
 # set = np.append(set, future_data_set, axis=0)
 # print len(set)
 
-fits_next_week_base = regressorB.predict(future_data_set)
-fits_next_week_anomaly = regressorA.predict(future_data_set)
-fits_next_week = [a + b for a, b in zip(fits_next_week_base, fits_next_week_anomaly)]
-fits_next_week_dummy = baseRegressor.predict(future_data_set)
+next_week_base, next_week_anomaly, next_week_total, next_week_dummy = regressor.predict(future_data_set)
 
 plt.subplot(312)
-plt.plot(fits_next_week, label="fits_nxt_wk")
-plt.plot(fits_next_week_base, label="fits_nxt_wk_base")
-plt.plot(fits_next_week_anomaly, label="fits_next_wk_anomaly")
-plt.plot(future_target_data_set, label="trgt_nxt_wk")
-plt.plot(fits_next_week_dummy, label="fits_nxt_wk_dummy")
+plt.plot(next_week_total, label="total")
+plt.plot(next_week_base, label="base")
+plt.plot(next_week_anomaly, label="anomaly")
+plt.plot(future_target_data_set, label="target")
+plt.plot(next_week_dummy, label="dummy")
 plt.grid(True)
 plt.legend()
 
-errs = [(a_i - b_i)**2 for a_i, b_i in zip(fits_next_week, future_target_data_set)]
-errs_base = [(a_i - b_i)**2 for a_i, b_i in zip(fits_next_week_dummy, future_target_data_set)]
+errs = regressor.get_errors(next_week_total, future_target_data_set)
+errs_base = regressor.get_errors(next_week_dummy, future_target_data_set)
 # The mean square error
 print("Residual sum of squares new fit: %.2f"
       % np.sum(errs))
@@ -190,7 +173,6 @@ plt.grid(True)
 plt.legend()
 plt.show()
 
-
 f_instances = "../load1"
 if os.path.isdir(f_instances):
     globpatt = os.path.join(f_instances, 'day*.txt')
@@ -206,10 +188,8 @@ for (i,f) in enumerate(f_instances):
     target_today = data.get_target_for_day(today)
     y_test = data.flatten_features(target_today)
     y_test = list(np.ravel(y_test))
-    predA = regressorA.predict(X_test)
-    predB = regressorB.predict(X_test)
-    pred = [x_i + y_i for x_i, y_i in zip(predA, predB)]
-    preds.append(regressorB.predict(X_test))
+    predA, predB, pred_total, pred_dummy = regressor.predict(X_test)
+    preds.append(pred_total)
     actuals.append(y_test)
 
 fig, ((ax1, ax2, ax3, ax4, ax5, ax6, ax7), (ax8, ax9, ax10, ax11, ax12, ax13, ax14)) = plt.subplots(nrows=2, ncols=7)
