@@ -41,7 +41,7 @@ class Data(object):
                         result[key] = list()
                     value = self.convert_type(value)
                     result[key].append(value)
-        return result
+        return self.handle_missing_values_advanced(result)
 
     def get_target_for_day(self, day):
         result = defaultdict()
@@ -53,7 +53,7 @@ class Data(object):
                         result[key] = list()
                     value = self.convert_type(value)
                     result[key].append(value)
-        return result
+        return self.handle_missing_values_advanced(result)
 
     # Returns dictionary with feature names (keys) and list of values for all instances
     # This dictionary can be used for filling in NaN's and for plotting features
@@ -67,7 +67,19 @@ class Data(object):
                         result[key] = list()
                     value = self.convert_type(value)
                     result[key].append(value)
-        return result
+        return self.handle_missing_values_advanced(result)
+
+    def get_target_for_prev_days(self, start, delta):
+        result = defaultdict()
+        data_days = pd.get_data_prevdays(self.data, start, delta)
+        for data_row in data_days:
+            for key, value in data_row.iteritems():
+                if key in self.predict_column:
+                    if key not in result:
+                        result[key] = list()
+                    value = self.convert_type(value)
+                    result[key].append(value)
+        return self.handle_missing_values_advanced(result)
 
     # Returns dictionary with feature names (keys) and list of values for all instances
     # This dictionary can be used for filling in NaN's and for plotting features
@@ -80,35 +92,15 @@ class Data(object):
                 if key not in result:
                     result[key] = list()
                 result[key] += value
-        return result
+        return self.handle_missing_values_advanced(result)
 
-    def get_labels_for_prev_days(self, start, delta):
-        result = list()
-        data_days = pd.get_data_prevdays(self.data, start, delta)
-        for data_row in data_days:
-            for key, value in data_row.iteritems():
-                if key == self.predict_column:
-                    value = self.convert_type(value)
-                    result.append(value)
-        return result
-
-    def get_labels_for_day(self, day):
-        result = list()
-        data_day = pd.get_data_day(self.data, day)  # returns all rows for one day
-        for data_row in data_day:
-            for key, value in data_row.iteritems():
-                if key == self.predict_column:
-                    value = self.convert_type(value)
-                    result.append(value)
-        return result
-
-    def get_labels_for_all_days(self):
+    def get_targets_for_all_days(self):
         result = list()
         days = pd.get_all_days(self.data)
         for day in days:
             labels_for_day = self.get_labels_for_day(day)
             result += labels_for_day
-        return result
+        return self.handle_missing_values_advanced(result)
 
     def get_all_days(self):
         return pd.get_all_days(self.data)
@@ -180,16 +172,4 @@ class Data(object):
             for value in features.values():
                 row.append(value[i])
             result.append(row)
-        return result
-
-    def get_target_for_prev_days(self, start, delta):
-        result = defaultdict()
-        data_days = pd.get_data_prevdays(self.data, start, delta)
-        for data_row in data_days:
-            for key, value in data_row.iteritems():
-                if key in self.predict_column:
-                    if key not in result:
-                        result[key] = list()
-                    value = self.convert_type(value)
-                    result[key].append(value)
         return result

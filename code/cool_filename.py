@@ -34,7 +34,6 @@ act_day = data.get_random_day()
 day = str(act_day)
 # keep these stored to plot them later against the trained model
 features = data.get_features_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(), dt.timedelta(historic_days))
-features = data.handle_missing_values_advanced(features)
 frequency = defaultdict(list)
 useful = [
             'ForecastWindProduction',
@@ -53,15 +52,12 @@ for (k, v) in features.items():
 z = features.copy()
 z.update(frequency)
 print "test"
-flattened_features = data.flatten_features(features)
-historic_data_set = flattened_features
+historic_data_set = data.flatten_features(features)
 
 
 target_features = data.get_target_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(),
                                                 dt.timedelta(historic_days))
-target_features = data.handle_missing_values_advanced(target_features)
-flattened_target_features = data.flatten_features(target_features)
-target_data_set = flattened_target_features
+target_data_set = data.flatten_features(target_features)
 
 
 
@@ -69,12 +65,10 @@ target_data_set = flattened_target_features
 # add one extra day since I am not sure if the data form the 30th day was included in the historic set.
 end_day = act_day + dt.timedelta(days=8)
 future_features = data.get_features_for_prev_days(end_day, dt.timedelta(days=7))
-future_features = data.handle_missing_values_advanced(future_features)
 flattened_future_features = data.flatten_features(future_features)
 future_data_set = flattened_future_features
 
 future_target = data.get_target_for_prev_days(end_day, dt.timedelta(days=7))
-future_target = data.handle_missing_values_advanced(future_target)
 flattened_future_target = data.flatten_features(future_target)
 future_target_data_set = flattened_future_target
 
