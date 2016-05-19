@@ -31,7 +31,7 @@ data_file = "../data/prices2013.dat"
 data = Data(data_file)
 
 # take 30 historic days before the data
-historic_days = 200
+historic_days = 100000
 
 act_day = data.get_random_day()
 day = str(act_day)
@@ -58,7 +58,6 @@ for (k, v) in features.items():
         frequency[new_key] = values
 z = features.copy()
 z.update(frequency)
-print "test"
 historic_data_set = data.flatten_features(features)
 
 
