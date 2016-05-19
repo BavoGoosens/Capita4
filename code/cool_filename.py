@@ -21,6 +21,9 @@ from math import isnan
 from pcp import pcp
 from collections import defaultdict
 import scipy.fftpack as ff
+runcheck = __import__('mzn-runcheck')
+import tempfile
+import checker_mzn as chkmzn
 
 
 # import data set and handle missing values
@@ -247,11 +250,10 @@ actuals = [] # also per day
 for (i,f) in enumerate(f_instances):
     today = act_day + dt.timedelta(i)
     rows_tod = data.get_features_for_day(today)
-    flattened_rows_today = data.flatten_features(rows_tod)
-    X_test = data.handle_missing_values(flattened_rows_today)
+    X_test = data.flatten_features(rows_tod)
     target_today = data.get_target_for_day(today)
-    flattened_target_today = data.flatten_features(target_today)
-    y_test = data.handle_missing_values(flattened_target_today)
+    y_test = data.flatten_features(target_today)
+    y_test = list(np.ravel(y_test))
     preds.append(regressorB.predict(X_test))
     actuals.append(y_test)
 
@@ -286,5 +288,34 @@ ax14.plot(preds[13], label="predicted")
 ax14.plot(actuals[13], label="actuals")
 # plt.show()
 
-
+file_mzn = "../energychallenge-BavoGoosensMichielVandendriesshe.mzn"
+tmpdir = tempfile.mkdtemp()
+mzn_dir = "/home/michielvandendriessche/Desktop/minizinc/minizinc"
+print_output = False
+print_pretty = False
+v = 1
 # Feed the predicted data to the scheduler and calculate the cost
+tot_act = 0
+tot_time = 0
+for i, f in enumerate(f_instances):
+    #f = f.replace("../", "")
+    data_forecasts = preds[i]
+    data_actual = actuals[i]
+    (timing, out) = runcheck.mzn_run(file_mzn, f, data_forecasts,
+                                     tmpdir, mzn_dir=mzn_dir,
+                                     print_output=print_output,
+                                     verbose=(v - 1))
+    instance = runcheck.mzn_toInstance(f, out, data_forecasts,
+                                       data_actual=data_actual,
+                                       pretty_print=print_pretty,
+                                       verbose=(v - 1))
+    if v >= 1:
+        # csv print:
+        if i == 0:
+            # an ugly hack, print more suited header here
+            print "scheduling_scenario; date; cost_forecast; cost_actual; runtime"
+        today = act_day + dt.timedelta(i)
+        chkmzn.print_instance_csv(f, today.__str__(), instance, timing=timing, header=False)
+    instance.compute_costs()
+    tot_act += instance.day.cj_act
+    tot_time += timing
