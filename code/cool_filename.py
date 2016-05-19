@@ -41,23 +41,6 @@ act_day = dt.date(2013, 2, 1)
 day = str(act_day)
 # keep these stored to plot them later against the trained model
 features = data.get_features_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(), dt.timedelta(historic_days))
-frequency = defaultdict(list)
-useful = [
-            'ForecastWindProduction',
-            'SystemLoadEA',
-            'SMPEA',
-            'ORKTemperature',
-            'ORKWindspeed',
-            'CO2Intensity',
-            'ActualWindProduction',
-            'SystemLoadEP2']
-for (k, v) in features.items():
-    if k in useful:
-        new_key = "fft_" + k
-        values = ff.fft(v)
-        frequency[new_key] = values
-z = features.copy()
-z.update(frequency)
 historic_data_set = data.flatten_features(features) # for training
 
 target_features = data.get_target_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(),
@@ -75,25 +58,6 @@ future_data_set = data.flatten_features(future_features) # for predicting
 
 future_target = data.get_target_for_prev_days(end_day, dt.timedelta(days=14))
 future_target_data_set = data.flatten_features(future_target) # for testing
-
-frequency = defaultdict(list)
-useful = [
-            'ForecastWindProduction',
-            'SystemLoadEA',
-            'SMPEA',
-            'ORKTemperature',
-            'ORKWindspeed',
-            'CO2Intensity',
-            'ActualWindProduction',
-            'SystemLoadEP2']
-for (k, v) in future_features.items():
-    if k in useful:
-        new_key = "fft_" + k
-        values = ff.fft(v)
-        frequency[new_key] = values
-y = future_features.copy()
-y.update(frequency)
-
 
 print "Start day = " + day
 print "End day = " + str(end_day)
