@@ -126,7 +126,7 @@ class Data(object):
         print "\nFeatures with missing values:"
         for feature_name in features_with_missing_values:
             feature_list = features[feature_name]
-            look = 5
+            look = 3
             print feature_name
             for index, feature_value in enumerate(feature_list):
                 if isnan(feature_value):
