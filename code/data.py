@@ -23,9 +23,7 @@ class Data(object):
             'SMPEA',
             'ORKTemperature',
             'ORKWindspeed',
-            'CO2Intensity',
-            'ActualWindProduction',
-            'SystemLoadEP2'
+            'CO2Intensity'
         ]
         self.predict_column = 'SMPEP2'
 
