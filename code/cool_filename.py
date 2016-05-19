@@ -39,6 +39,7 @@ act_day = get_random_day()
 day = str(act_day)
 # keep these stored to plot them later against the trained model
 features = data.get_features_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(), dt.timedelta(historic_days))
+data.handle_missing_values_advanced(features)
 flattened_features = data.flatten_features(features)
 historic_data_set = data.handle_missing_values(flattened_features)
 
