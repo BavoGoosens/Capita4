@@ -15,6 +15,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import NuSVR
 from sklearn.svm import LinearSVR
 from sklearn.svm import SVR
+from sklearn.kernel_ridge import KernelRidge
 
 from pcp import pcp
 
@@ -64,8 +65,10 @@ print "End of next week = " + str(end_day)
 # Experiment
 
 # RPCA Tests
-L, S, (u, s, v) = pcp(target_data_set, maxiter=30, verbose=True, svd_method="exact")
-LD, SD, (uD, sD, vD) = pcp(historic_data_set, maxiter=30, verbose=True, svd_method="exact")
+L, S, (u, s, v) = pcp(target_data_set, maxiter=30, verbose=False, svd_method="approximate")
+L = np.ravel(L)
+S = np.ravel(S)
+LD, SD, (uD, sD, vD) = pcp(historic_data_set, maxiter=30, verbose=False, svd_method="exact")
 
 
 # plt.figure(3)
@@ -75,14 +78,15 @@ LD, SD, (uD, sD, vD) = pcp(historic_data_set, maxiter=30, verbose=True, svd_meth
 # # plt.plot(L + S, label="reconstructed")
 # plt.grid(True)
 # plt.legend()
-# # plt.show()
+# plt.show()
 
 
 # train on historic data.
 
 avg = np.median(L)
 # regressorB = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
-regressorB = LinearSVR()
+# regressorB = LinearSVR()
+regressorB = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
 # regressorB = DecisionTreeRegressor(max_depth=4)
 # regressorB = RandomForestRegressor()
 # regressorB = linear_model.TheilSenRegressor()
@@ -99,10 +103,11 @@ regressorB.fit(historic_data_set, L)
 # regressorA = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
 # regressorA = DecisionTreeRegressor(max_depth=2)
 # regressorA = RandomForestRegressor()
-regressorA = BaggingRegressor()
-# regressorA = SVR()
+# regressorA = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
+regressorA = SVR(kernel='rbf', C=50, gamma=10)
 # regressorA = LinearSVR()
-# regressorA = NuSVR()
+# regressorA = NuSVR(kernel='rbf', C=1e3, gamma=0.1)
+# regressorA = KernelRidge(alpha=1.0, coef0=1, degree=3, gamma=None, kernel='poly', kernel_params=None)
 # regressorA = linear_model.TheilSenRegressor()
 # regressorA = linear_model.Ridge()
 # regressorA = linear_model.BayesianRidge()
@@ -118,7 +123,7 @@ regressorA.fit(historic_data_set, S)
 baseRegressor = linear_model.LinearRegression()
 baseRegressor.fit(historic_data_set, target_data_set)
 
-print "Using following model: " + str(regressorA) + str(regressorB)
+# print "Using following model: " + str(regressorA) + str(regressorB)
 
 # plot the trained models against the data they were trained on
 # together with least squares measures(in order to experiment with diff linear models)
@@ -150,6 +155,14 @@ plt.legend()
 fits_next_week_base = [regressorB.predict(future_data_set)]
 fits_next_week_base = fits_next_week_base[0]
 
+
+#exp
+# print len(future_data_set)
+# set = historic_data_set[:-len(future_data_set)]
+# print len(set)
+# set = np.append(set, future_data_set, axis=0)
+# print len(set)
+
 fits_next_week_anomaly = [regressorA.predict(future_data_set)]
 fits_next_week_anomaly = fits_next_week_anomaly[0]
 
@@ -168,14 +181,20 @@ plt.grid(True)
 plt.legend()
 
 errs = [(a_i - b_i)**2 for a_i, b_i in zip(fits_next_week, future_target_data_set)]
+errs_base = [(a_i - b_i)**2 for a_i, b_i in zip(fits_next_week_dummy, future_target_data_set)]
 # The mean square error
-print("Residual sum of squares: %.2f"
-      % np.mean(errs))
+print("Residual sum of squares new fit: %.2f"
+      % np.sum(errs))
+print("Residual sum of squares old fit: %.2f"
+      % np.sum(errs_base))
 # Explained variance score: 1 is perfect prediction
-print('Variance score: %.2f' % regressorB.score(future_data_set, future_target_data_set))
+print('Variance score base: %.2f' % regressorB.score(future_data_set, future_target_data_set))
+print('Variance score anomaly: %.2f' % regressorA.score(future_data_set, future_target_data_set))
+print('Variance score base fit: %.2f' % baseRegressor.score(future_data_set, future_target_data_set))
 
 plt.subplot(313)
-plt.plot(errs, label="Errors")
+plt.plot(errs, label="Errors new fit")
+plt.plot(errs_base, label="Errors dummy fit")
 plt.grid(True)
 plt.legend()
 plt.show()
