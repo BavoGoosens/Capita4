@@ -65,12 +65,10 @@ target_data_set = data.flatten_features(target_features)
 # add one extra day since I am not sure if the data form the 30th day was included in the historic set.
 end_day = act_day + dt.timedelta(days=8)
 future_features = data.get_features_for_prev_days(end_day, dt.timedelta(days=7))
-flattened_future_features = data.flatten_features(future_features)
-future_data_set = flattened_future_features
+future_data_set = data.flatten_features(future_features)
 
 future_target = data.get_target_for_prev_days(end_day, dt.timedelta(days=7))
-flattened_future_target = data.flatten_features(future_target)
-future_target_data_set = flattened_future_target
+future_target_data_set = data.flatten_features(future_target)
 
 frequency = defaultdict(list)
 useful = [
