@@ -4,10 +4,11 @@ from data import Data
 
 data_file = "../data/prices2013.dat"
 data = Data(data_file)
-
+start = dt.datetime.strptime("2012-12-1", '%Y-%m-%d').date()
+delta = dt.timedelta(50)
 # DIT GEEFT EEN DICTIONARY VAN LIJSTEN TERUG IPV EEN LIJST VAN DICTIONARIES
 # DAT IS MAKKELIJKER OM 1 FEATURE TE PLOTTEN (gewoon via key opvragen) EN OM NAN's ERUIT TE HALEN
-features = data.get_features_for_prev_days(dt.datetime.strptime("2012-12-1", '%Y-%m-%d').date(), dt.timedelta(50))
+features = data.get_features_for_prev_days(start, delta)
 #features = data.get_features_for_all_days()
 
 # DIT ZET DE DICTIONARY TERUG OM NAAR EEN LIJST VAN LIJSTEN
@@ -16,6 +17,7 @@ features = data.get_features_for_prev_days(dt.datetime.strptime("2012-12-1", '%Y
 flattened_features = data.flatten_features(features)
 
 flattened_features_without_nan = data.handle_missing_values(flattened_features)
+labels = data.get_labels_for_prev_days(start, delta)
 
 feature_data = features["SMPEA"]
 feature_data2 = features["ORKTemperature"]
