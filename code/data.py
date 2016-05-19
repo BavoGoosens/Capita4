@@ -21,7 +21,11 @@ class Data(object):
             'ForecastWindProduction',
             'SystemLoadEA',
             'SMPEA',
-            'ORKTemperature'
+            'ORKTemperature',
+            'ORKWindspeed',
+            'CO2Intensity',
+            'ActualWindProduction',
+            'SystemLoadEP2'
         ]
         self.predict_column = 'SMPEP2'
 
@@ -122,7 +126,7 @@ class Data(object):
         print "\nFeatures with missing values:"
         for feature_name in features_with_missing_values:
             feature_list = features[feature_name]
-            look = 10
+            look = 5
             print feature_name
             for index, feature_value in enumerate(feature_list):
                 if isnan(feature_value):
@@ -144,6 +148,8 @@ class Data(object):
                     avg = mean([avg_before, avg_after])
                     feature_list[index] = avg
                     print feature_list[index_min:index_max + 1]
+            features[feature_name] = feature_list
+        return features
 
     def get_features_with_missing_values(self, features):
         features_missing_values = list()

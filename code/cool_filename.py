@@ -18,7 +18,8 @@ from sklearn.svm import SVR
 from sklearn.kernel_ridge import KernelRidge
 from math import isnan
 from pcp import pcp
-
+from collections import defaultdict
+import scipy.fftpack as ff
 
 
 # import data set and handle missing values
@@ -26,7 +27,7 @@ data_file = "../data/prices2013.dat"
 data = Data(data_file)
 
 # take 30 historic days before the data
-historic_days = 30
+historic_days = 200
 
 
 # choose a random date.
@@ -39,25 +40,49 @@ act_day = get_random_day()
 day = str(act_day)
 # keep these stored to plot them later against the trained model
 features = data.get_features_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(), dt.timedelta(historic_days))
-data.handle_missing_values_advanced(features)
+features = data.handle_missing_values_advanced(features)
+frequency = defaultdict(list)
+useful = [
+            'ForecastWindProduction',
+            'SystemLoadEA',
+            'SMPEA',
+            'ORKTemperature',
+            'ORKWindspeed',
+            'CO2Intensity',
+            'ActualWindProduction',
+            'SystemLoadEP2']
+for (k, v) in features.items():
+    if k in useful:
+        new_key = "fft_" + k
+        values = ff.fft(v)
+        frequency[new_key] = values
+z = features.copy()
+z.update(frequency)
+print "test"
 flattened_features = data.flatten_features(features)
-historic_data_set = data.handle_missing_values(flattened_features)
+historic_data_set = flattened_features
+
 
 target_features = data.get_target_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(),
                                                 dt.timedelta(historic_days))
+target_features = data.handle_missing_values_advanced(target_features)
 flattened_target_features = data.flatten_features(target_features)
-target_data_set = data.handle_missing_values(flattened_target_features)
+target_data_set = flattened_target_features
+
+
 
 # get next week to get the actual data later to compare the predictions against
 # add one extra day since I am not sure if the data form the 30th day was included in the historic set.
 end_day = act_day + dt.timedelta(days=8)
 future_features = data.get_features_for_prev_days(end_day, dt.timedelta(days=7))
+future_features = data.handle_missing_values_advanced(future_features)
 flattened_future_features = data.flatten_features(future_features)
-future_data_set = data.handle_missing_values(flattened_future_features)
+future_data_set = flattened_future_features
 
 future_target = data.get_target_for_prev_days(end_day, dt.timedelta(days=7))
+future_target = data.handle_missing_values_advanced(future_target)
 flattened_future_target = data.flatten_features(future_target)
-future_target_data_set = data.handle_missing_values(flattened_future_target)
+future_target_data_set = flattened_future_target
 
 print "Random Day = " + day
 print "End of next week = " + str(end_day)
@@ -86,8 +111,8 @@ LD, SD, (uD, sD, vD) = pcp(historic_data_set, maxiter=30, verbose=False, svd_met
 avg = np.median(L)
 # regressorB = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
 # regressorB = LinearSVR()
-regressorB = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
-# regressorB = DecisionTreeRegressor(max_depth=4)
+# regressorB = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
+regressorB = DecisionTreeRegressor(max_depth=4)
 # regressorB = RandomForestRegressor()
 # regressorB = linear_model.TheilSenRegressor()
 # regressorB = linear_model.Ridge()
@@ -100,12 +125,12 @@ regressorB = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
 # regressorB = KNeighborsRegressor(n_neighbors=3)
 regressorB.fit(historic_data_set, L)
 
-# regressorA = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
+# regressorA = AdaBoostRegressor(linear_model.Lasso(), n_estimators=300)
 # regressorA = DecisionTreeRegressor(max_depth=2)
 # regressorA = RandomForestRegressor()
-# regressorA = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
+regressorA = BaggingRegressor(linear_model.Lasso())
 # regressorA = SVR(kernel='rbf', C=50, gamma=10)
-regressorA = LinearSVR()
+# regressorA = LinearSVR()
 # regressorA = NuSVR(kernel='rbf', C=1e3, gamma=0.1)
 # regressorA = KernelRidge(alpha=1.0, coef0=1, degree=3, gamma=None, kernel='poly', kernel_params=None)
 # regressorA = linear_model.TheilSenRegressor()
@@ -187,6 +212,11 @@ print("Residual sum of squares new fit: %.2f"
       % np.sum(errs))
 print("Residual sum of squares old fit: %.2f"
       % np.sum(errs_base))
+print("AVG sum of squares new fit: %.2f"
+      % np.mean(errs))
+print("AVG sum of squares old fit: %.2f"
+      % np.mean(errs_base))
+
 # Explained variance score: 1 is perfect prediction
 print('Variance score base: %.2f' % regressorB.score(future_data_set, future_target_data_set))
 print('Variance score anomaly: %.2f' % regressorA.score(future_data_set, future_target_data_set))
