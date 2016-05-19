@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.ensemble import BaggingRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neighbors import RadiusNeighborsRegressor
 from sklearn.neighbors import KNeighborsRegressor
@@ -84,6 +85,25 @@ future_target = data.handle_missing_values_advanced(future_target)
 flattened_future_target = data.flatten_features(future_target)
 future_target_data_set = flattened_future_target
 
+frequency = defaultdict(list)
+useful = [
+            'ForecastWindProduction',
+            'SystemLoadEA',
+            'SMPEA',
+            'ORKTemperature',
+            'ORKWindspeed',
+            'CO2Intensity',
+            'ActualWindProduction',
+            'SystemLoadEP2']
+for (k, v) in future_features.items():
+    if k in useful:
+        new_key = "fft_" + k
+        values = ff.fft(v)
+        frequency[new_key] = values
+y = future_features.copy()
+y.update(frequency)
+
+
 print "Random Day = " + day
 print "End of next week = " + str(end_day)
 
@@ -125,12 +145,13 @@ regressorB = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
 # regressorB = KNeighborsRegressor(n_neighbors=3)
 regressorB.fit(historic_data_set, L)
 
-regressorA = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
+# regressorA = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
 # regressorA = DecisionTreeRegressor(max_depth=2)
 # regressorA = RandomForestRegressor()
 # regressorA = BaggingRegressor(linear_model.Lasso())
-# regressorA = SVR(kernel='rbf', C=50, gamma=10)
+# regressorA = SVR(kernel='poly', C=50, gamma=10)
 # regressorA = LinearSVR()
+regressorA = GradientBoostingRegressor()
 # regressorA = NuSVR(kernel='rbf', C=1e3, gamma=0.1)
 # regressorA = KernelRidge(alpha=1.0, coef0=1, degree=3, gamma=None, kernel='poly', kernel_params=None)
 # regressorA = linear_model.TheilSenRegressor()
