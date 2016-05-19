@@ -36,7 +36,7 @@ def print_instance_csv(f_inst, f_fore, instance, timing=None, header=True):
         csv_timing = "; %.2f"%timing
     if header:    
         print "f_instance; f_forecast; cost_forecast; cost_actual%s"%msg_timing
-    print "%s; %s; %s; %s%s"%(f_inst, f_fore, d_cj_fore, d_cj_act, csv_timing)
+    print "%s; %s; %s; %s; %s%s"%(f_inst, f_fore, d_cj_fore, d_cj_act, str(abs(float(d_cj_fore)-float(d_cj_act))), csv_timing)
 
 def pretty_print(instance):
     for m in instance.day.machines:

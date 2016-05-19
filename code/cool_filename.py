@@ -37,6 +37,10 @@ act_day = data.get_random_day()
 day = str(act_day)
 # keep these stored to plot them later against the trained model
 features = data.get_features_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(), dt.timedelta(historic_days))
+for feature_name, feature_list in features.items():
+    for index, feature in enumerate(feature_list):
+        if isnan(feature):
+            raise ValueError("There are still NAN's in your data!"+str(feature_name)+": "+str(index))
 frequency = defaultdict(list)
 useful = [
             'ForecastWindProduction',
@@ -254,6 +258,9 @@ for (i,f) in enumerate(f_instances):
     target_today = data.get_target_for_day(today)
     y_test = data.flatten_features(target_today)
     y_test = list(np.ravel(y_test))
+    predA = regressorA.predict(X_test)
+    predB = regressorB.predict(X_test)
+    pred = [x_i + y_i for x_i, y_i in zip(predA, predB)]
     preds.append(regressorB.predict(X_test))
     actuals.append(y_test)
 
@@ -313,7 +320,7 @@ for i, f in enumerate(f_instances):
         # csv print:
         if i == 0:
             # an ugly hack, print more suited header here
-            print "scheduling_scenario; date; cost_forecast; cost_actual; runtime"
+            print "scheduling_scenario; date; cost_forecast; cost_actual; cost_error; runtime"
         today = act_day + dt.timedelta(i)
         chkmzn.print_instance_csv(f, today.__str__(), instance, timing=timing, header=False)
     instance.compute_costs()
