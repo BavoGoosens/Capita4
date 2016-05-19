@@ -2,8 +2,8 @@ import prices_data as pd
 from collections import defaultdict
 from sklearn.preprocessing import Imputer
 
-class Data(object):
 
+class Data(object):
     path = None
     data = None
     feature_columns = None
@@ -27,10 +27,22 @@ class Data(object):
     # This dictionary can be used for filling in NaN's and for plotting features
     def get_features_for_day(self, day):
         result = defaultdict()
-        data_day = pd.get_data_day(self.data, day) # returns all rows for one day
+        data_day = pd.get_data_day(self.data, day)  # returns all rows for one day
         for data_row in data_day:
             for key, value in data_row.iteritems():
                 if key in self.feature_columns:
+                    if key not in result:
+                        result[key] = list()
+                    value = self.convert_type(value)
+                    result[key].append(value)
+        return result
+
+    def get_target_for_day(self, day):
+        result = defaultdict()
+        data_day = pd.get_data_day(self.data, day)  # returns all rows for one day
+        for data_row in data_day:
+            for key, value in data_row.iteritems():
+                if key in self.predict_column:
                     if key not in result:
                         result[key] = list()
                     value = self.convert_type(value)
@@ -55,7 +67,7 @@ class Data(object):
     # This dictionary can be used for filling in NaN's and for plotting features
     def get_features_for_all_days(self):
         result = defaultdict()
-        days = pd.get_all_days(self.data) # returns all days (without data) in data set
+        days = pd.get_all_days(self.data)  # returns all days (without data) in data set
         for day in days:
             features = self.get_features_for_day(day)
             for key, value in features.iteritems():
@@ -92,6 +104,12 @@ class Data(object):
             result += labels_for_day
         return result
 
+    def get_all_days(self):
+        days = set()
+        for row in self.data:
+            days.add(row['datetime'].date())
+        return sorted(days)
+
     def handle_missing_values(self, flattened_features):
         imputer = Imputer(missing_values=float('nan'), strategy='most_frequent')
         flattened_features = imputer.fit_transform(flattened_features)
@@ -117,4 +135,16 @@ class Data(object):
             for value in features.values():
                 row.append(value[i])
             result.append(row)
+        return result
+
+    def get_target_for_prev_days(self, start, delta):
+        result = defaultdict()
+        data_days = pd.get_data_prevdays(self.data, start, delta)
+        for data_row in data_days:
+            for key, value in data_row.iteritems():
+                if key in self.predict_column:
+                    if key not in result:
+                        result[key] = list()
+                    value = self.convert_type(value)
+                    result[key].append(value)
         return result

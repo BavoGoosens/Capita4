@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from data import Data
 
 MZNSOLUTIONBASENAME = "minizinc.out"
 
@@ -25,7 +26,6 @@ from prices_regress import *
 import numpy as np
 from sklearn import linear_model
 
-
 # from http://code.activestate.com/recipes/577932-flatten-arraytuple/
 def _qflatten(L,a,I):
     for x in L:
@@ -51,9 +51,9 @@ if __name__ == '__main__':
     parser.add_argument("--print-output", help="print the output of minizinc", action="store_true")
     parser.add_argument("--tmp-keep", help="keep created temp subdir", action="store_true")
     args = parser.parse_args()
-    
+
     # if you want to hardcode the MiniZincIDE path for the binaries, here is a resonable place to do that
-    args.mzn_dir = "/Applications/MiniZincIDE.app/Contents/Resources"
+    #args.mzn_dir = "/home/tias/local/src/MiniZincIDE-2.0.13-bundle-linux-x86_64"
 
     tmpdir = ""
     if args.tmp:
@@ -70,7 +70,8 @@ if __name__ == '__main__':
 
     ##### data stuff
     # load train/test data
-    datafile = 'data/prices2013.dat';
+    datafile = '../data/prices2013.dat';
+    data = Data(datafile)
     dat = load_prices(datafile)
 
     column_features = [ 'HolidayFlag', 'DayOfWeek', 'PeriodOfDay', 'ForecastWindProduction', 'SystemLoadEA', 'SMPEA' ]; # within the same day you can use all except: ActualWindProduction, SystemLoadEP2, SMPEP2
@@ -89,11 +90,12 @@ if __name__ == '__main__':
     preds = [] # [(model_name, predictions)]
 
     # features, learning and predictions
+
     rows_prev = get_data_prevdays(dat, day, timedelta(args.historic_days))
     X_train = [ [eval(v) for (k,v) in row.iteritems() if k in column_features] for row in rows_prev]
     y_train = [ eval(row[column_predict]) for row in rows_prev ]
 
-    clf = linear_model.TheilSenRegressor()
+    clf = linear_model.Lasso
     clf.fit(X_train, y_train)
 
     preds = [] # per day an array containing a prediction for each PeriodOfDay
@@ -126,7 +128,7 @@ if __name__ == '__main__':
                                   verbose=args.v-1)
         if args.v >= 1:
             # csv print:
-            if i == 0: 
+            if i == 0:
                 # an ugly hack, print more suited header here
                 print "scheduling_scenario; date; cost_forecast; cost_actual; runtime"
             today = day + timedelta(i)
