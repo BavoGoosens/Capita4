@@ -166,16 +166,10 @@ baseRegressor.fit(historic_data_set, target_data_set)
 # plot the trained models against the data they were trained on
 # together with least squares measures(in order to experiment with diff linear models)
 
-fits_base = [regressorB.predict(historic_data_set)]
-fits_base = fits_base[0]
-
-fits_anomaly = [regressorA.predict(historic_data_set)]
-fits_anomaly = fits_anomaly[0]
-
+fits_base = regressorB.predict(historic_data_set)
+fits_anomaly = regressorA.predict(historic_data_set)
 fits_same = [a_i + b_i for a_i, b_i in zip(fits_base, fits_anomaly)]
-
-fits_dummy = [baseRegressor.predict(historic_data_set)]
-fits_dummy = fits_dummy[0]
+fits_dummy = baseRegressor.predict(historic_data_set)
 
 plt.figure(1)
 plt.subplot(311)
@@ -190,8 +184,7 @@ plt.legend()
 # plot the predicted values (by the model) against the actual prices for that week
 # it is this prediction that we'll feed to the scheduler
 
-fits_next_week_base = [regressorB.predict(future_data_set)]
-fits_next_week_base = fits_next_week_base[0]
+
 
 
 #exp
@@ -201,13 +194,10 @@ fits_next_week_base = fits_next_week_base[0]
 # set = np.append(set, future_data_set, axis=0)
 # print len(set)
 
-fits_next_week_anomaly = [regressorA.predict(future_data_set)]
-fits_next_week_anomaly = fits_next_week_anomaly[0]
-
-fits_next_week_dummy = [baseRegressor.predict(future_data_set)]
-fits_next_week_dummy = fits_next_week_dummy[0]
-
+fits_next_week_base = regressorB.predict(future_data_set)
+fits_next_week_anomaly = regressorA.predict(future_data_set)
 fits_next_week = [a + b for a, b in zip(fits_next_week_base, fits_next_week_anomaly)]
+fits_next_week_dummy = baseRegressor.predict(future_data_set)
 
 plt.subplot(312)
 plt.plot(fits_next_week, label="fits_nxt_wk")
