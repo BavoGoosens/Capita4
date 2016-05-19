@@ -123,16 +123,16 @@ class Data(object):
 
     def handle_missing_values_advanced(self, features):
         features_with_missing_values = self.get_features_with_missing_values(features)
-        print "\nFeatures with missing values:"
+        # print "\nFeatures with missing values:"
         for feature_name in features_with_missing_values:
             feature_list = features[feature_name]
-            look = 3
-            print feature_name
+            look = 15
+            # print feature_name
             for index, feature_value in enumerate(feature_list):
                 if isnan(feature_value):
                     index_min = index - look if index >= look else 0
                     index_max = index + look if index + look < len(feature_list) else len(feature_list)-1
-                    print feature_list[index_min:index_max+1]
+                    # print feature_list[index_min:index_max+1]
                     values_before = [
                         feature_value
                         for feature_value in feature_list[index_min:index]
@@ -147,7 +147,7 @@ class Data(object):
                     avg_after = mean(values_after)
                     avg = mean([avg_before, avg_after])
                     feature_list[index] = avg
-                    print feature_list[index_min:index_max + 1]
+                    # print feature_list[index_min:index_max + 1]
             features[feature_name] = feature_list
         return features
 
