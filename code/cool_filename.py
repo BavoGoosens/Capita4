@@ -31,7 +31,7 @@ data_file = "../data/prices2013.dat"
 data = Data(data_file)
 
 # take 30 historic days before the data
-historic_days = 200
+historic_days = 60
 
 act_day = data.get_random_day()
 day = str(act_day)
@@ -107,15 +107,28 @@ L = np.ravel(L)
 S = np.ravel(S)
 LD, SD, (uD, sD, vD) = pcp(np.array(historic_data_set), maxiter=30, verbose=False, svd_method="exact")
 
+plt.figure(5)
+plt.plot([item[3] for item in historic_data_set], label="historic_data_set")
+plt.plot([item[3] for item in LD], label="low_dimension")
+plt.plot([item[3] for item in SD], label="sparse")
+plt.legend()
+plt.show()
 
-#plt.figure(3)
-#plt.plot(target_data_set, label="target")
-#plt.plot(L, label="low_rank")
-#plt.plot(S, label="sparse")
-#plt.plot(L + S, label="reconstructed")
-#plt.grid(True)
-#plt.legend()
-#plt.show()
+
+# plt.figure(3)
+# plt.plot(target_data_set, label="target")
+# plt.plot(L, label="low_rank")
+# plt.plot(S, label="sparse")
+# plt.plot(L + S, label="reconstructed")
+# plt.grid(True)
+# plt.legend()
+# plt.show()
+
+# plt.figure(4)
+# plt.plot(future_target_data_set, label="target")
+# plt.grid(True)
+# plt.legend()
+# plt.show()
 
 
 # train on historic data.
@@ -152,7 +165,7 @@ regressorA = GradientBoostingRegressor()
 # regressorA = linear_model.LinearRegression()
 # regressorA = linear_model.PassiveAggressiveRegressor()
 # regressorA = linear_model.SGDRegressor()
-# regressorA = linear_model.Lasso()
+regressorA = linear_model.Lasso()
 # regressorA = linear_model.RANSACRegressor()
 # regressorA = RadiusNeighborsRegressor(radius=1.0)
 # regressorA = KNeighborsRegressor(n_neighbors=4)
