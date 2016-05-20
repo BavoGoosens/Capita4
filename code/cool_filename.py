@@ -38,7 +38,7 @@ historic_days = 50
 
 # initialize start day
 act_day = data.get_random_day()
-act_day = dt.date(2013, 11, 1) # comment if day needs to be chosen randomly
+act_day = dt.date(2013, 2, 1) # comment if day needs to be chosen randomly
 day = str(act_day)
 
 # keep these stored to plot them later against the trained model
@@ -195,7 +195,7 @@ plt.grid(True)
 plt.legend()
 plt.show()
 
-f_instances = "../load8"
+f_instances = "../load1"
 if os.path.isdir(f_instances):
     globpatt = os.path.join(f_instances, 'day*.txt')
     f_instances = sorted(glob.glob(globpatt))
