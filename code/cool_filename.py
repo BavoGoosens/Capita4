@@ -2,7 +2,6 @@ import os
 import glob
 import datetime as dt
 from data import Data
-import random
 import numpy as np
 from sklearn import linear_model
 from matplotlib import pyplot as plt
@@ -20,99 +19,62 @@ from sklearn.kernel_ridge import KernelRidge
 from math import isnan
 from pcp import pcp
 from collections import defaultdict
-import scipy.fftpack as ff
 runcheck = __import__('mzn-runcheck')
 import tempfile
 import checker_mzn as chkmzn
+from warnings import filterwarnings
+from regressor import Regressor
+from metaregressor import MetaRegressor
 
+filterwarnings("ignore")
 
 # import data set and handle missing values
 data_file = "../data/prices2013.dat"
 data = Data(data_file)
 
-# take 30 historic days before the data
-historic_days = 60
+# take historic days before the data
+historic_days = 50
 
+
+# initialize start day
 act_day = data.get_random_day()
+act_day = dt.date(2013, 2, 1) # comment if day needs to be chosen randomly
 day = str(act_day)
+
 # keep these stored to plot them later against the trained model
 features = data.get_features_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(), dt.timedelta(historic_days))
-for feature_name, feature_list in features.items():
-    for index, feature in enumerate(feature_list):
-        if isnan(feature):
-            raise ValueError("There are still NAN's in your data!"+str(feature_name)+": "+str(index))
-frequency = defaultdict(list)
-useful = [
-            'ForecastWindProduction',
-            'SystemLoadEA',
-            'SMPEA',
-            'ORKTemperature',
-            'ORKWindspeed',
-            'CO2Intensity',
-            'ActualWindProduction',
-            'SystemLoadEP2']
-for (k, v) in features.items():
-    if k in useful:
-        new_key = "fft_" + k
-        values = ff.fft(v)
-        frequency[new_key] = values
-z = features.copy()
-z.update(frequency)
-print "test"
-historic_data_set = data.flatten_features(features)
-
+historic_data_set = data.flatten_features(features) # for training
 
 target_features = data.get_target_for_prev_days(dt.datetime.strptime(day, '%Y-%m-%d').date(),
                                                 dt.timedelta(historic_days))
-target_data_set = data.flatten_features(target_features)
-
-
+target_data_set = data.flatten_features(target_features) # for training
 
 # get next week to get the actual data later to compare the predictions against
 # add one extra day since I am not sure if the data form the 30th day was included in the historic set.
-end_day = act_day + dt.timedelta(days=8)
-future_features = data.get_features_for_prev_days(end_day, dt.timedelta(days=7))
-future_data_set = data.flatten_features(future_features)
+end_day = act_day + dt.timedelta(days=15)
 
-future_target = data.get_target_for_prev_days(end_day, dt.timedelta(days=7))
-future_target_data_set = data.flatten_features(future_target)
+future_features = data.get_features_for_prev_days(end_day, dt.timedelta(days=14))
+future_data_set = data.flatten_features(future_features) # for predicting
 
-frequency = defaultdict(list)
-useful = [
-            'ForecastWindProduction',
-            'SystemLoadEA',
-            'SMPEA',
-            'ORKTemperature',
-            'ORKWindspeed',
-            'CO2Intensity',
-            'ActualWindProduction',
-            'SystemLoadEP2']
-for (k, v) in future_features.items():
-    if k in useful:
-        new_key = "fft_" + k
-        values = ff.fft(v)
-        frequency[new_key] = values
-y = future_features.copy()
-y.update(frequency)
+future_target = data.get_target_for_prev_days(end_day, dt.timedelta(days=14))
+future_target_data_set = data.flatten_features(future_target) # for testing
 
-
-print "Random Day = " + day
-print "End of next week = " + str(end_day)
+print "Start day = " + day
+print "End day = " + str(end_day)
 
 # Experiment
-
 # RPCA Tests
 L, S, (u, s, v) = pcp(np.array(target_data_set), maxiter=30, verbose=False, svd_method="approximate")
 L = np.ravel(L)
 S = np.ravel(S)
 LD, SD, (uD, sD, vD) = pcp(np.array(historic_data_set), maxiter=30, verbose=False, svd_method="exact")
 
-plt.figure(5)
-plt.plot([item[3] for item in historic_data_set], label="historic_data_set")
-plt.plot([item[3] for item in LD], label="low_dimension")
-plt.plot([item[3] for item in SD], label="sparse")
-plt.legend()
-plt.show()
+# plt.figure(5)
+# plt.plot([item[3] for item in historic_data_set], label="historic_data_set")
+# plt.plot([item[3] for item in LD], label="low_dimension")
+# plt.plot([item[3] for item in SD], label="sparse")
+# plt.legend()
+# plt.show()
 
 
 # plt.figure(3)
@@ -130,75 +92,66 @@ plt.show()
 # plt.legend()
 # plt.show()
 
-
 # train on historic data.
-
-avg = np.median(L)
-# regressorB = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
+# regressorB1 = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
 # regressorB = LinearSVR()
-regressorB = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
+# regressorB = BaggingRegressor(base_estimator=DecisionTreeRegressor(max_depth=2))
 # regressorB = DecisionTreeRegressor(max_depth=4)
 # regressorB = RandomForestRegressor()
-# regressorB = linear_model.TheilSenRegressor()
+# regressorB2 = linear_model.TheilSenRegressor()
 # regressorB = linear_model.Ridge()
 # regressorB = linear_model.LinearRegression()
-# regressorB = linear_model.PassiveAggressiveRegressor()
+# regressorB3 = linear_model.PassiveAggressiveRegressor()
 # regressorB = linear_model.SGDRegressor()
-# regressorB = linear_model.Lasso()
+regressorB2 = linear_model.Lasso()
 # regressorB = linear_model.RANSACRegressor()
 # regressorB = RadiusNeighborsRegressor(radius=1.0)
 # regressorB = KNeighborsRegressor(n_neighbors=3)
-regressorB.fit(historic_data_set, L)
 
 # regressorA = AdaBoostRegressor(DecisionTreeRegressor(max_depth=2), n_estimators=300)
 # regressorA = DecisionTreeRegressor(max_depth=2)
 # regressorA = RandomForestRegressor()
-# regressorA = BaggingRegressor(linear_model.Lasso())
+regressorA1 = BaggingRegressor(linear_model.Lasso())
 # regressorA = SVR(kernel='poly', C=50, gamma=10)
 # regressorA = LinearSVR()
-regressorA = GradientBoostingRegressor()
-# regressorA = NuSVR(kernel='rbf', C=1e3, gamma=0.1)
+# regressorA = GradientBoostingRegressor()
+regressorA2 = NuSVR(kernel='rbf', C=1e3, gamma=0.1)
 # regressorA = KernelRidge(alpha=1.0, coef0=1, degree=3, gamma=None, kernel='poly', kernel_params=None)
 # regressorA = linear_model.TheilSenRegressor()
-# regressorA = linear_model.Ridge()
+regressorA3 = linear_model.Ridge()
 # regressorA = linear_model.BayesianRidge()
-# regressorA = linear_model.LinearRegression()
-# regressorA = linear_model.PassiveAggressiveRegressor()
+regressorA4 = linear_model.LinearRegression()
+regressorA5 = linear_model.PassiveAggressiveRegressor()
 # regressorA = linear_model.SGDRegressor()
 regressorA = linear_model.Lasso()
 # regressorA = linear_model.RANSACRegressor()
 # regressorA = RadiusNeighborsRegressor(radius=1.0)
 # regressorA = KNeighborsRegressor(n_neighbors=4)
-regressorA.fit(historic_data_set, S)
 
+regressorB = MetaRegressor([regressorB2])
+regressorA = MetaRegressor([regressorA1, regressorA2, regressorA3, regressorA4, regressorA5])
 baseRegressor = linear_model.LinearRegression()
-baseRegressor.fit(historic_data_set, target_data_set)
 
-# print "Using following model: " + str(regressorA) + str(regressorB)
+regressor = Regressor(regressorA, regressorB, baseRegressor)
+regressor.fit(historic_data_set, target_data_set)
 
 # plot the trained models against the data they were trained on
 # together with least squares measures(in order to experiment with diff linear models)
 
-fits_base = regressorB.predict(historic_data_set)
-fits_anomaly = regressorA.predict(historic_data_set)
-fits_same = [a_i + b_i for a_i, b_i in zip(fits_base, fits_anomaly)]
-fits_dummy = baseRegressor.predict(historic_data_set)
+predict_base, predict_anomaly, predict_total, predict_dummy = regressor.predict(historic_data_set)
 
 plt.figure(1)
 plt.subplot(311)
-plt.plot(fits_same, label="fits_same")
-plt.plot(fits_base, label="base_fit")
-plt.plot(fits_anomaly, label="anomaly_fit")
-plt.plot(target_data_set, label="trgt_fnc")
-plt.plot(fits_dummy, label="fits_dummy")
+plt.plot(predict_total, label="total")
+plt.plot(predict_base, label="base")
+plt.plot(predict_anomaly, label="anomaly")
+plt.plot(target_data_set, label="target")
+plt.plot(predict_dummy, label="dummy")
 plt.grid(True)
 plt.legend()
 
 # plot the predicted values (by the model) against the actual prices for that week
 # it is this prediction that we'll feed to the scheduler
-
-
-
 
 #exp
 # print len(future_data_set)
@@ -207,22 +160,19 @@ plt.legend()
 # set = np.append(set, future_data_set, axis=0)
 # print len(set)
 
-fits_next_week_base = regressorB.predict(future_data_set)
-fits_next_week_anomaly = regressorA.predict(future_data_set)
-fits_next_week = [a + b for a, b in zip(fits_next_week_base, fits_next_week_anomaly)]
-fits_next_week_dummy = baseRegressor.predict(future_data_set)
+next_week_base, next_week_anomaly, next_week_total, next_week_dummy = regressor.predict(future_data_set)
 
 plt.subplot(312)
-plt.plot(fits_next_week, label="fits_nxt_wk")
-plt.plot(fits_next_week_base, label="fits_nxt_wk_base")
-plt.plot(fits_next_week_anomaly, label="fits_next_wk_anomaly")
-plt.plot(future_target_data_set, label="trgt_nxt_wk")
-plt.plot(fits_next_week_dummy, label="fits_nxt_wk_dummy")
+plt.plot(next_week_total, label="total")
+plt.plot(next_week_base, label="base")
+plt.plot(next_week_anomaly, label="anomaly")
+plt.plot(future_target_data_set, label="target")
+plt.plot(next_week_dummy, label="dummy")
 plt.grid(True)
 plt.legend()
 
-errs = [(a_i - b_i)**2 for a_i, b_i in zip(fits_next_week, future_target_data_set)]
-errs_base = [(a_i - b_i)**2 for a_i, b_i in zip(fits_next_week_dummy, future_target_data_set)]
+errs = regressor.get_errors(next_week_total, future_target_data_set)
+errs_base = regressor.get_errors(next_week_dummy, future_target_data_set)
 # The mean square error
 print("Residual sum of squares new fit: %.2f"
       % np.sum(errs))
@@ -245,10 +195,9 @@ plt.grid(True)
 plt.legend()
 plt.show()
 
-
-f_instances = "../load2"
-if os.path.isdir("../load2"):
-    globpatt = os.path.join("../load2", 'day*.txt')
+f_instances = "../load1"
+if os.path.isdir(f_instances):
+    globpatt = os.path.join(f_instances, 'day*.txt')
     f_instances = sorted(glob.glob(globpatt))
 
 # zelfde als hier boven maar de preds en actual targets zijn per day gesplitst.
@@ -261,10 +210,8 @@ for (i,f) in enumerate(f_instances):
     target_today = data.get_target_for_day(today)
     y_test = data.flatten_features(target_today)
     y_test = list(np.ravel(y_test))
-    predA = regressorA.predict(X_test)
-    predB = regressorB.predict(X_test)
-    pred = [x_i + y_i for x_i, y_i in zip(predA, predB)]
-    preds.append(regressorB.predict(X_test))
+    predA, predB, pred_total, pred_dummy = regressor.predict(X_test)
+    preds.append(pred_total)
     actuals.append(y_test)
 
 fig, ((ax1, ax2, ax3, ax4, ax5, ax6, ax7), (ax8, ax9, ax10, ax11, ax12, ax13, ax14)) = plt.subplots(nrows=2, ncols=7)
@@ -296,7 +243,7 @@ ax13.plot(preds[12], label="predicted")
 ax13.plot(actuals[12], label="actuals")
 ax14.plot(preds[13], label="predicted")
 ax14.plot(actuals[13], label="actuals")
-# plt.show()
+plt.show()
 
 file_mzn = "../energychallenge-BavoGoosensMichielVandendriesshe.mzn"
 tmpdir = tempfile.mkdtemp()
@@ -323,9 +270,13 @@ for i, f in enumerate(f_instances):
         # csv print:
         if i == 0:
             # an ugly hack, print more suited header here
-            print "scheduling_scenario; date; cost_forecast; cost_actual; cost_error; runtime"
+            print "scheduling_scenario; date; cost_forecast; cost_actual; runtime"
         today = act_day + dt.timedelta(i)
         chkmzn.print_instance_csv(f, today.__str__(), instance, timing=timing, header=False)
     instance.compute_costs()
     tot_act += instance.day.cj_act
     tot_time += timing
+
+print ""
+print "Total cost: "+str(tot_act)
+print "Total time: "+str(timing)

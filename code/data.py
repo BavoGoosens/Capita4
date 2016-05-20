@@ -172,3 +172,24 @@ class Data(object):
                 row.append(value[i])
             result.append(row)
         return result
+
+    def features_have_missing_slots(self, features):
+        for feature_name, feature_list in features.items():
+            if feature_name == "DayOfWeek":
+                previous_day_of_week = feature_list[0]
+                next_day_of_week = divmod(previous_day_of_week + 1, 7)[1]
+                for day_of_week in feature_list:
+                    if day_of_week != previous_day_of_week:
+                        if day_of_week != next_day_of_week:
+                            print "missing day!"
+                        previous_day_of_week = day_of_week
+                        next_day_of_week = divmod(previous_day_of_week + 1, 7)[1]
+            if feature_name == "PeriodOfDay":
+                previous_period_of_day = feature_list[0]
+                next_period_of_day = divmod(previous_period_of_day + 1, 48)[1]
+                for period_of_day in feature_list:
+                    if period_of_day != previous_period_of_day:
+                        if period_of_day != next_period_of_day:
+                            print "missing slot!"
+                        previous_period_of_day = period_of_day
+                        next_period_of_day = divmod(previous_period_of_day + 1, 48)[1]
